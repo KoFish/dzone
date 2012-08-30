@@ -1,26 +1,46 @@
 <?php
 
+function cmp($a, $b) {
+  /* Assumes that the directory containing a issue has the format 
+   * <name of the issue>_nr_NN_YYYY where NN is any number of numbers and YYYY 
+   * is the year of publication.
+   */
+  $cmp_pattern = "/_nr_([0-9]*)_([0-9]{4})/";
+  if ((preg_match($cmp_pattern, $a[1], $a_) == 0) || (preg_match($cmp_pattern, $b[1], $b_) == 0)) {
+    strcmp($a[1],$b[1]);
+  }
+  $a = $a_[2].$a_[1];
+  $b = $b_[2].$b_[1];
+
+  return intval($a) > intval($b);
+}
+
 $dir=opendir("issues/");
 
 $i=0;
 while($file=readdir($dir)) {
   if ($file != "." && $file != ".." && 
-    //substr_compare($file, ".swf", -4, 4, true) == 0) {
-    is_file($file)) {
-      $filearray[$i++]=substr($file, 0, -4);
+    is_dir("issues/".$file)) {
+      $filearray[$i++]=Array(str_replace("_", " ", $file), $file);
     }
 }
+
 closedir($dir);
 
-rsort($filearray);
 
-if($filearray) {
-  $nr=$filearray[0];
-  if(isset($_GET['nr'])) {
-    $nr=$_GET['nr'];
-    if (!in_array($nr, $filearray)) {
-      unset($nr);
+if(isset($filearray) && $filearray) {
+  usort($filearray, "cmp");
+  $issue=$filearray[0];
+  if(isset($_GET['issue'])) {
+    $issue=$_GET['issue'];
+    $is=false;
+    foreach($filearray as $f) {
+      if ($issue == $filearray[1]) {
+        $is=true;
+        break;
+      }
     }
+    if (!$is) unset($issue);
   }
 }
 
@@ -34,34 +54,68 @@ if($filearray) {
   <link rel="stylesheet" href="master.css" type="text/css" media="screen" charset="utf-8"/>
 
 <script language="javascript">
+function switchIssue(sel) {
+  selIndex = sel.selectedIndex;
+  if (sel.options[selIndex].value != "none") {
+    frames['flipframe'].location.href = "issues/" + sel.options[selIndex].value;
+  }
+}
 </script>
 </head>
 <body>
 
+<div id="topborder"></div>
+
 <div id="page">
-  <div id="header"></div>
-  <div id="menu">
-    <form method="GET">
-    <label for="nr">Select another issue</label>
-    <select name="nr" onchange="this.form.submit()">
-      <option value="none"></option>
+  <div id="header">
+    <div id="menu">
+      <form method="GET">
+      <label for="issue">Välj nummer här:</label>
+      <select name="issue" onchange="switchIssue(this.form.issue)">
+        <!-- option value="none"></option -->
 <?php
 foreach($filearray as $f) {
-  if ($f == $nr) {
-  } else {
-    print("<option value=\"$f\">$f</option>");
-  }
+  print("      <option value=\"$f[1]\"".(($f[1] == $issue) ? " SELECTED" : "").">$f[0]</option>\n");
 }
 ?>
-    </select>
-    </form>
+      </select>
+      </form>
+    </div>
+    <img src="nukandu.jpg">
   </div>
 
   <div id="content">
-    <iframe name="flipframe" src="$nr.swf" scrolling="no"></iframe>
+  <iframe name="flipframe" src="<?php echo("issues/".$f); ?>" scrolling="no"></iframe>
   </div>
 
-  <div id="footer"></div>
+  <div id="footer">
+    <span id="footer-img"></span>
+    <span>
+      <strong>Besöksadress:</strong>
+      <blockquote>
+        Brightpoint Sweden AB<br/>
+        Falkenbergsgatan 3</br>
+        SE-412 85 Gothenburg
+      </blockquote>
+    </span>
+    <span>
+      <strong>Kontakta växeln:</strong>
+      <blockquote>
+        Tel: 000-000000<br/>
+        info@brightpoint.se
+      </blockquote>
+    </span>
+    <span>
+      <strong>Order och kundsupport</strong>
+      <blockquote>
+        Tel: 000-000000<br/>
+        info@brightpoint.se
+      </blockquote>
+    </span>
+    <span>
+      <a href="www.brightpoint.com">www.BrightPoint.com</a>
+    </span>
+  </div>
 
 </div>
 
